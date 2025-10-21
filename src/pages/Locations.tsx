@@ -24,11 +24,13 @@ export default function Locations() {
   const [lon, setLon] = useState("");
   const [timezone, setTimezone] = useState("");
   const [marker, setMarker] = useState<[number, number] | null>(null);
-  const [loading, setLoading] = useState(false); // ✅ เพิ่ม state สำหรับ loading
+  const [loading, setLoading] = useState(false);
 
   const fetchLocations = async () => {
+    setLoading(true);
     const res = await api.get<Location[]>("/locations");
     setLocations(res.data);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function Locations() {
   }, []);
 
   const handleAdd = async () => {
-    setLoading(true); // ✅ เริ่ม loading
+    setLoading(true);
     try {
       await api.post("/locations", {
         name,
@@ -53,11 +55,10 @@ export default function Locations() {
     } catch (err) {
       console.error("Error saving location:", err);
     } finally {
-      setLoading(false); // ✅ หยุด loading
+      setLoading(false);
     }
   };
 
-  // ✅ ดึง timezone จาก Open-Meteo API
   function LocationSelector() {
     useMapEvents({
       async click(e) {
@@ -73,59 +74,58 @@ export default function Locations() {
             `https://api.open-meteo.com/v1/forecast?latitude=${latVal}&longitude=${lonVal}&current=temperature_2m&timezone=auto`
           );
           const data = await res.json();
-          console.log("Fetched timezone:", data.timezone);
           setTimezone(data.timezone || "");
-          return marker ? <Marker position={marker} icon={customIcon} /> : null;
         } catch (err) {
           console.error("Error fetching timezone:", err);
           setTimezone("");
         }
       },
     });
-    return marker ? <Marker position={marker} /> : null;
+    return marker ? <Marker position={marker} icon={customIcon} /> : null;
   }
 
   return (
-    <div>
+    <div className="bg-gray-100 dark:bg-gray-900 min-h-screen text-gray-900 dark:text-white transition-colors duration-300">
       <Navbar />
 
-      {/* ✅ Overlay Spinner */}
+      {/* Overlay Loading Spinner */}
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[9999]">
           <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
 
-      <div className="p-6">
+      <div className="p-6 max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold mb-4">Locations</h1>
 
-        <div className="mb-4">
+        {/* Input Form */}
+        <div className="flex flex-wrap gap-2 mb-6">
           <input
-            className="border p-2 mr-2"
+            className="border dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-full sm:w-auto"
             placeholder="City Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <input
-            className="border p-2 mr-2 w-24"
+            className="border dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-24"
             placeholder="Lat"
             value={lat}
             onChange={(e) => setLat(e.target.value)}
           />
           <input
-            className="border p-2 mr-2 w-24"
+            className="border dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-24"
             placeholder="Lon"
             value={lon}
             onChange={(e) => setLon(e.target.value)}
           />
           <input
-            className="border p-2 mr-2 w-36"
+            className="border dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-36"
             placeholder="Timezone"
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
           />
           <button
-            className="bg-green-500 text-white px-4 py-2 rounded"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
             onClick={handleAdd}
             disabled={!name || !lat || !lon || !timezone || loading}
           >
@@ -133,8 +133,8 @@ export default function Locations() {
           </button>
         </div>
 
-        {/* แผนที่ */}
-        <div className="h-[400px] mb-6 border rounded">
+        {/* Map */}
+        <div className="h-[400px] mb-6 border rounded overflow-hidden dark:border-gray-700">
           <MapContainer
             center={marker || [13.7367, 100.5231]}
             zoom={marker ? 12 : 6}
@@ -148,27 +148,32 @@ export default function Locations() {
           </MapContainer>
         </div>
 
-        {/* ตารางแสดง Locations */}
-        <table className="w-full border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border p-2">Name</th>
-              <th className="border p-2">Lat</th>
-              <th className="border p-2">Lon</th>
-              <th className="border p-2">Timezone</th>
-            </tr>
-          </thead>
-          <tbody>
-            {locations.map((loc) => (
-              <tr key={loc.id}>
-                <td className="border p-2">{loc.name}</td>
-                <td className="border p-2">{loc.lat}</td>
-                <td className="border p-2">{loc.lon}</td>
-                <td className="border p-2">{loc.timezone}</td>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full border border-gray-300 dark:border-gray-700">
+            <thead className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white">
+              <tr>
+                <th className="border p-2">Name</th>
+                <th className="border p-2">Lat</th>
+                <th className="border p-2">Lon</th>
+                <th className="border p-2">Timezone</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 text-black dark:text-white">
+              {locations.map((loc) => (
+                <tr
+                  key={loc.id}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <td className="border p-2">{loc.name}</td>
+                  <td className="border p-2">{loc.lat}</td>
+                  <td className="border p-2">{loc.lon}</td>
+                  <td className="border p-2">{loc.timezone}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
