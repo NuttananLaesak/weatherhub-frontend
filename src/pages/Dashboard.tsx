@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import api from "../api/axios";
 import Navbar from "./Navbar";
 import {
@@ -20,6 +21,8 @@ import type {
 } from "../types/weather";
 import type { Location } from "../types/location";
 
+import type { RootState, AppDispatch } from "../store";
+import { setSelectedLocation } from "../store/locationSelected";
 // ChartJS register
 ChartJS.register(
   CategoryScale,
@@ -34,8 +37,9 @@ ChartJS.register(
 
 export default function Dashboard() {
   const [locations, setLocations] = useState<Location[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(
-    null
+  const dispatch = useDispatch<AppDispatch>();
+  const selectedLocation = useSelector(
+    (state: RootState) => state.location.selectedLocation
   );
   const [latest, setLatest] = useState<LatestWeather | null>(null);
   const [hourly, setHourly] = useState<HourlyWeather[]>([]);
@@ -48,13 +52,12 @@ export default function Dashboard() {
       try {
         const res = await api.get<Location[]>("/locations");
         setLocations(res.data);
-        // if (res.data.length > 0) setSelectedLocation(res.data[0]);
       } catch (err) {
         console.error("Error fetching locations", err);
       }
     };
     fetchLocations();
-  }, []);
+  }, [dispatch, selectedLocation]);
 
   // Load weather when location changes
   useEffect(() => {
@@ -123,7 +126,7 @@ export default function Dashboard() {
       )}
 
       <div className="p-6 max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+        <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
         {/* City Selector */}
         <div className="mb-6">
@@ -131,12 +134,12 @@ export default function Dashboard() {
           <select
             className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-2 rounded"
             value={selectedLocation?.id || ""}
-            onChange={(e) =>
-              setSelectedLocation(
+            onChange={(e) => {
+              const loc =
                 locations.find((loc) => loc.id === Number(e.target.value)) ||
-                  null
-              )
-            }
+                null;
+              dispatch(setSelectedLocation(loc));
+            }}
           >
             <option value="" disabled>
               -- Select City --

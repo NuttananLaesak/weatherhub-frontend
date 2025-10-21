@@ -25,6 +25,7 @@ export default function Locations() {
   const [timezone, setTimezone] = useState("");
   const [marker, setMarker] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const fetchLocations = async () => {
     setLoading(true);
@@ -39,6 +40,7 @@ export default function Locations() {
 
   const handleAdd = async () => {
     setLoading(true);
+    setSaved(true);
     try {
       await api.post("/locations", {
         name,
@@ -56,6 +58,7 @@ export default function Locations() {
       console.error("Error saving location:", err);
     } finally {
       setLoading(false);
+      setSaved(false);
     }
   };
 
@@ -129,7 +132,7 @@ export default function Locations() {
             onClick={handleAdd}
             disabled={!name || !lat || !lon || !timezone || loading}
           >
-            {loading ? "Saving..." : "Add"}
+            {saved ? "Saving..." : "Add"}
           </button>
         </div>
 

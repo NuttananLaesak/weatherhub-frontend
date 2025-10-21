@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import api from "../api/axios";
 import Navbar from "./Navbar";
 import { Bar } from "react-chartjs-2";
@@ -14,6 +15,9 @@ import {
 import type { Location } from "../types/location";
 import type { DailyWeather } from "../types/weather";
 
+import type { RootState, AppDispatch } from "../store";
+import { setCity1, setCity2 } from "../store/compareSelected";
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -25,11 +29,11 @@ ChartJS.register(
 
 export default function CompareDashboard() {
   const [locations, setLocations] = useState<Location[]>([]);
-  const [city1, setCity1] = useState<Location | null>(null);
-  const [city2, setCity2] = useState<Location | null>(null);
+  const dispatch = useDispatch<AppDispatch>();
+  const { city1, city2 } = useSelector((state: RootState) => state.compare);
   const [daily1, setDaily1] = useState<DailyWeather[]>([]);
   const [daily2, setDaily2] = useState<DailyWeather[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const getTodayThaiDate = (): string => {
     const now = new Date();
@@ -45,16 +49,12 @@ export default function CompareDashboard() {
       try {
         const res = await api.get<Location[]>("/locations");
         setLocations(res.data);
-        if (res.data.length >= 2) {
-          setCity1(res.data[0]);
-          setCity2(res.data[1]);
-        }
       } catch (err) {
         console.error("Error fetching locations:", err);
       }
     };
     fetchLocations();
-  }, []);
+  }, [dispatch, city1, city2]);
 
   useEffect(() => {
     const fetchDaily = async () => {
@@ -101,11 +101,19 @@ export default function CompareDashboard() {
               className="border dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-48"
               value={city1?.id || ""}
               onChange={(e) =>
-                setCity1(
-                  locations.find((l) => l.id === Number(e.target.value)) || null
+                dispatch(
+                  setCity1(
+                    locations.find((l) => l.id === Number(e.target.value)) ||
+                      null
+                  )
                 )
               }
             >
+              {city1 ? null : (
+                <option value="" disabled>
+                  Select City
+                </option>
+              )}
               {locations.map((loc) => (
                 <option key={loc.id} value={loc.id}>
                   {loc.name}
@@ -120,11 +128,20 @@ export default function CompareDashboard() {
               className="border dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-48"
               value={city2?.id || ""}
               onChange={(e) =>
-                setCity2(
-                  locations.find((l) => l.id === Number(e.target.value)) || null
+                dispatch(
+                  setCity2(
+                    locations.find((l) => l.id === Number(e.target.value)) ||
+                      null
+                  )
                 )
               }
             >
+              {city2 ? null : (
+                <option value="" disabled>
+                  Select City
+                </option>
+              )}
+
               {locations.map((loc) => (
                 <option key={loc.id} value={loc.id}>
                   {loc.name}
@@ -134,76 +151,89 @@ export default function CompareDashboard() {
           </div>
         </div>
 
-        {!loading && daily1.length > 0 && daily2.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 p-4 rounded shadow-md">
-            <Bar
-              data={{
-                labels: ["Temp Max (°C)", "Temp Min (°C)", "Rain (mm)"],
-                datasets: [
-                  {
-                    label: `${city1?.name}`,
-                    data: [
-                      daily1[0]?.temp_max || 0,
-                      daily1[0]?.temp_min || 0,
-                      daily1[0]?.rain_total_mm || 0,
-                    ],
-                    backgroundColor: "rgba(255, 99, 132, 0.6)",
-                  },
-                  {
-                    label: `${city2?.name}`,
-                    data: [
-                      daily2[0]?.temp_max || 0,
-                      daily2[0]?.temp_min || 0,
-                      daily2[0]?.rain_total_mm || 0,
-                    ],
-                    backgroundColor: "rgba(54, 162, 235, 0.6)",
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    labels: {
-                      color: "#fff",
-                    },
-                  },
-                  title: {
-                    display: true,
-                    text: `เปรียบเทียบสภาพอากาศประจำวันที่ ${today}`,
-                    color: "#fff",
-                    font: {
-                      size: 18,
-                    },
-                  },
-                },
-                scales: {
-                  x: {
-                    title: {
-                      display: true,
-                      text: "Parameter",
-                      color: "#ccc",
-                    },
-                    ticks: {
-                      color: "#ccc",
-                    },
-                  },
-                  y: {
-                    beginAtZero: true,
-                    title: {
-                      display: true,
-                      text: "Value",
-                      color: "#ccc",
-                    },
-                    ticks: {
-                      color: "#ccc",
-                    },
-                  },
-                },
-              }}
-            />
+        {/* เช็คเงื่อนไขหากยังไม่ได้เลือกทั้ง City 1 และ City 2 */}
+        {(!city1 || !city2) && (
+          <div className="relative overflow-hidden rounded-lg p-8 bg-white dark:bg-gray-800 shadow-xl text-center">
+            <div className="absolute inset-0 opacity-5 bg-[url('/pattern.svg')] bg-cover bg-center pointer-events-none" />
+            <div className="text-4xl mb-4">📍</div>
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2">
+              No city selected
+            </h2>
+            <p className="text-md text-gray-600 dark:text-gray-400">
+              Please choose a city from the dropdown above to view the compare
+              weather data.
+            </p>
           </div>
         )}
+
+        {/* แสดงกราฟเมื่อทั้ง City 1 และ City 2 ถูกเลือกแล้ว */}
+        {!loading &&
+          city1 &&
+          city2 &&
+          daily1.length > 0 &&
+          daily2.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 p-4 rounded shadow-md">
+              <h2 className="text-xl font-semibold mb-5">
+                Weather Comparison for {today}
+              </h2>
+              <Bar
+                data={{
+                  labels: ["Temp Max (°C)", "Temp Min (°C)", "Rain (mm)"],
+                  datasets: [
+                    {
+                      label: `${city1?.name}`,
+                      data: [
+                        daily1[0]?.temp_max || 0,
+                        daily1[0]?.temp_min || 0,
+                        daily1[0]?.rain_total_mm || 0,
+                      ],
+                      backgroundColor: "rgba(255, 99, 132, 0.6)",
+                    },
+                    {
+                      label: `${city2?.name}`,
+                      data: [
+                        daily2[0]?.temp_max || 0,
+                        daily2[0]?.temp_min || 0,
+                        daily2[0]?.rain_total_mm || 0,
+                      ],
+                      backgroundColor: "rgba(54, 162, 235, 0.6)",
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      labels: {
+                        color: "#fff",
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      title: {
+                        display: true,
+                        color: "#ccc",
+                      },
+                      ticks: {
+                        color: "#ccc",
+                      },
+                    },
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        color: "#ccc",
+                      },
+                      ticks: {
+                        color: "#ccc",
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+          )}
       </div>
     </div>
   );
