@@ -34,6 +34,7 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+import { HiOutlineMapPin } from "react-icons/hi2";
 
 export default function Dashboard() {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -275,7 +276,9 @@ export default function Dashboard() {
         ) : (
           <div className="relative overflow-hidden rounded-lg p-8 bg-white dark:bg-gray-800 shadow-xl text-center">
             <div className="absolute inset-0 opacity-5 bg-[url('/pattern.svg')] bg-cover bg-center pointer-events-none" />
-            <div className="text-4xl mb-4">📍</div>
+            <div className="flex justify-center mb-4">
+              <HiOutlineMapPin className="text-6xl text-green-600 dark:text-green-400 animate-bounce" />
+            </div>
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2">
               No city selected
             </h2>

@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { BsGlobeAmericas } from "react-icons/bs";
 
 const customIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png",
@@ -163,17 +164,37 @@ export default function Locations() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 text-black dark:text-white">
-              {locations.map((loc) => (
-                <tr
-                  key={loc.id}
-                  className="hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <td className="border p-2">{loc.name}</td>
-                  <td className="border p-2">{loc.lat}</td>
-                  <td className="border p-2">{loc.lon}</td>
-                  <td className="border p-2">{loc.timezone}</td>
+              {locations.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center relative">
+                    <div className="relative overflow-hidden rounded-lg p-10 bg-white dark:bg-gray-800 shadow-lg text-center transition-all duration-300 hover:shadow-2xl">
+                      <div className="absolute inset-0 opacity-5 bg-[url('/pattern.svg')] bg-cover bg-center pointer-events-none" />
+                      <div className="flex justify-center mb-4">
+                        <BsGlobeAmericas className="text-6xl text-green-600 dark:text-green-400 animate-bounce" />
+                      </div>
+                      <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2">
+                        No locations found
+                      </h2>
+                      <p className="text-md text-gray-600 dark:text-gray-400">
+                        Add a new location above or click on the map to select
+                        one.
+                      </p>
+                    </div>
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                locations.map((loc) => (
+                  <tr
+                    key={loc.id}
+                    className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <td className="border p-2">{loc.name}</td>
+                    <td className="border p-2">{loc.lat}</td>
+                    <td className="border p-2">{loc.lon}</td>
+                    <td className="border p-2">{loc.timezone}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

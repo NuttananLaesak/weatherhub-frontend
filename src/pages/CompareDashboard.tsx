@@ -26,6 +26,7 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+import { LuScale } from "react-icons/lu";
 
 export default function CompareDashboard() {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -155,7 +156,11 @@ export default function CompareDashboard() {
         {(!city1 || !city2) && (
           <div className="relative overflow-hidden rounded-lg p-8 bg-white dark:bg-gray-800 shadow-xl text-center">
             <div className="absolute inset-0 opacity-5 bg-[url('/pattern.svg')] bg-cover bg-center pointer-events-none" />
-            <div className="text-4xl mb-4">📍</div>
+            <div className="flex justify-center mb-4">
+              <div className="p-4 bg-blue-100 dark:bg-blue-900/20 rounded-full animate-bounce">
+                <LuScale className="text-6xl text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2">
               No city selected
             </h2>
