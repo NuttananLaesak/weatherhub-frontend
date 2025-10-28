@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import api from "../api/axios";
-import Navbar from "./Navbar";
+import Navbar from "../components/Navbar";
 import {
   Chart as ChartJS,
   CategoryScale,

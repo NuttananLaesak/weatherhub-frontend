@@ -1,19 +1,19 @@
-import { useState } from "react";
-import api from "../api/axios";
+import { useState, useEffect } from "react";
+import api from "../../api/axios";
 import { AxiosError } from "axios";
+import type { LoginResponse } from "../../types/auth";
 import { useNavigate } from "react-router-dom";
-
-interface LoginResponse {
-  token: string;
-}
+import { showError } from "../../utils/sweetAlert";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [dots, setDots] = useState(""); // สำหรับจุด …
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+    setLoading(true);
     try {
       const res = await api.post<LoginResponse>("/auth/login", {
         email,
@@ -23,9 +23,26 @@ export default function Login() {
       navigate("/dashboard");
     } catch (err) {
       const error = err as AxiosError<{ message: string }>;
-      setError(error.response?.data?.message || "Login failed");
+      const message = error.response?.data?.message || "Login failed";
+      showError({
+        title: "Login Failed",
+        text: message,
+        confirmButtonText: "OK",
+      });
+    } finally {
+      setLoading(false);
+      setDots(""); // รีเซ็ตจุดหลังโหลดเสร็จ
     }
   };
+
+  // Effect สำหรับวนจุด …
+  useEffect(() => {
+    if (!loading) return;
+    const interval = setInterval(() => {
+      setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
+    }, 500); // เพิ่มจุดทุก 0.5 วินาที
+    return () => clearInterval(interval);
+  }, [loading]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
@@ -49,17 +66,28 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
           <button
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-md transition-colors duration-200"
+            className={`
+              w-full 
+              bg-blue-600      
+              text-white 
+              font-medium 
+              py-2 
+              rounded-md 
+              transition 
+              duration-300 
+              flex items-center justify-center
+              ${
+                loading ? "cursor-not-allowed opacity-70" : "hover:bg-blue-700 "
+              }
+            `}
             onClick={handleLogin}
+            disabled={loading}
           >
-            Login
+            {loading ? `Logging in${dots}` : "Login"}
           </button>
         </div>
-
-        {error && (
-          <p className="text-red-500 text-sm mt-4 text-center">{error}</p>
-        )}
       </div>
     </div>
   );

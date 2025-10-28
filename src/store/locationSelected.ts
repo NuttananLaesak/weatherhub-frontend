@@ -1,9 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Location } from "../types/location";
-
-interface LocationState {
-  selectedLocation: Location | null;
-}
+import type { Location, LocationState } from "../types/location";
 
 const initialState: LocationState = {
   selectedLocation: null,

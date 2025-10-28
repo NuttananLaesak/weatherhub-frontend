@@ -1,10 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Location } from "../types/location";
-
-interface CompareState {
-  city1: Location | null;
-  city2: Location | null;
-}
+import type { Location, CompareState } from "../types/location";
 
 const initialState: CompareState = {
   city1: null,

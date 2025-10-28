@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.swal2-confirm {
+  @apply bg-green-600 text-white font-bold px-8 py-3 rounded;
+}
+
+.swal2-confirm:hover {
+  @apply bg-green-700;
+}
+
+.swal2-cancel {
+  @apply bg-red-600 text-white font-bold px-8 py-3 rounded;
+}
+
+.swal2-cancel:hover {
+  @apply bg-red-700;
+}
