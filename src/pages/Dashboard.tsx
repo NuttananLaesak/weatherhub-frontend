@@ -20,9 +20,12 @@ import type {
   DailyWeather,
 } from "../types/weather";
 import type { Location } from "../types/location";
-
 import type { RootState, AppDispatch } from "../store";
 import { setSelectedLocation } from "../store/locationSelected";
+import { HiOutlineMapPin } from "react-icons/hi2";
+import Select, { type SingleValue, type GroupBase } from "react-select";
+import { customSelectStyles } from "../styles/customSelectStyles";
+
 // ChartJS register
 ChartJS.register(
   CategoryScale,
@@ -34,7 +37,11 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-import { HiOutlineMapPin } from "react-icons/hi2";
+
+type OptionType = {
+  value: number;
+  label: string;
+};
 
 export default function Dashboard() {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -108,18 +115,24 @@ export default function Dashboard() {
       } catch (err) {
         console.error("Error fetching weather", err);
       } finally {
-        setLoading(false); // ✅ Done loading
+        setLoading(false);
       }
     };
 
     fetchWeather();
   }, [selectedLocation]);
 
+  // Prepare options for React Select
+  const cityOptions: OptionType[] = locations.map((loc) => ({
+    value: loc.id,
+    label: loc.name,
+  }));
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
       <Navbar />
 
-      {/* 🔄 Loading Spinner */}
+      {/* Loading Spinner */}
       {loading && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin" />
@@ -130,27 +143,30 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
         {/* City Selector */}
-        <div className="mb-6">
-          <label className="mr-2 font-semibold">Select City :</label>
-          <select
-            className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-2 rounded"
-            value={selectedLocation?.id || ""}
-            onChange={(e) => {
-              const loc =
-                locations.find((loc) => loc.id === Number(e.target.value)) ||
-                null;
-              dispatch(setSelectedLocation(loc));
-            }}
-          >
-            <option value="" disabled>
-              -- Select City --
-            </option>
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>
-                {loc.name}
-              </option>
-            ))}
-          </select>
+        <div className="mb-6 flex items-center space-x-2">
+          <label className="font-semibold">Select City :</label>
+          <div className="w-auto">
+            <Select<OptionType, false, GroupBase<OptionType>>
+              options={cityOptions}
+              value={
+                selectedLocation
+                  ? { value: selectedLocation.id, label: selectedLocation.name }
+                  : null
+              }
+              onChange={(option: SingleValue<OptionType>) => {
+                if (!option) {
+                  dispatch(setSelectedLocation(null));
+                  return;
+                }
+                const loc =
+                  locations.find((l) => l.id === option.value) || null;
+                dispatch(setSelectedLocation(loc));
+              }}
+              isClearable
+              placeholder="-- Select City --"
+              styles={customSelectStyles}
+            />
+          </div>
         </div>
 
         {/* แสดงข้อมูลเฉพาะเมื่อเลือกเมืองแล้ว */}

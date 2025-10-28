@@ -17,6 +17,10 @@ import type { DailyWeather } from "../types/weather";
 
 import type { RootState, AppDispatch } from "../store";
 import { setCity1, setCity2 } from "../store/compareSelected";
+import { LuScale } from "react-icons/lu";
+
+import Select, { type SingleValue, type GroupBase } from "react-select";
+import { customSelectStyles } from "../styles/customSelectStyles";
 
 ChartJS.register(
   CategoryScale,
@@ -26,7 +30,11 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-import { LuScale } from "react-icons/lu";
+
+type OptionType = {
+  value: number;
+  label: string;
+};
 
 export default function CompareDashboard() {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -82,6 +90,11 @@ export default function CompareDashboard() {
     fetchDaily();
   }, [city1, city2, today]);
 
+  const cityOptions: OptionType[] = locations.map((loc) => ({
+    value: loc.id,
+    label: loc.name,
+  }));
+
   return (
     <div className="bg-gray-100 dark:bg-gray-900 min-h-screen text-gray-900 dark:text-white transition-colors duration-300">
       <Navbar />
@@ -95,60 +108,41 @@ export default function CompareDashboard() {
       <div className="p-6 max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Compare Mode</h1>
 
-        <div className="flex flex-wrap gap-4 items-center mb-6">
-          <div>
+        <div className="flex flex-wrap gap-8 items-center mb-6">
+          {/* City 1 */}
+          <div className="w-48">
             <label className="block font-semibold mb-1">City 1:</label>
-            <select
-              className="border dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-48"
-              value={city1?.id || ""}
-              onChange={(e) =>
-                dispatch(
-                  setCity1(
-                    locations.find((l) => l.id === Number(e.target.value)) ||
-                      null
-                  )
-                )
-              }
-            >
-              {city1 ? null : (
-                <option value="" disabled>
-                  Select City
-                </option>
-              )}
-              {locations.map((loc) => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name}
-                </option>
-              ))}
-            </select>
+            <Select<OptionType, false, GroupBase<OptionType>>
+              options={cityOptions}
+              value={city1 ? { value: city1.id, label: city1.name } : null}
+              onChange={(option: SingleValue<OptionType>) => {
+                if (!option) return dispatch(setCity1(null));
+                const loc =
+                  locations.find((l) => l.id === option.value) || null;
+                dispatch(setCity1(loc));
+              }}
+              isClearable
+              placeholder="-- Select City --"
+              styles={customSelectStyles}
+            />
           </div>
 
-          <div>
+          {/* City 2 */}
+          <div className="w-48">
             <label className="block font-semibold mb-1">City 2:</label>
-            <select
-              className="border dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-48"
-              value={city2?.id || ""}
-              onChange={(e) =>
-                dispatch(
-                  setCity2(
-                    locations.find((l) => l.id === Number(e.target.value)) ||
-                      null
-                  )
-                )
-              }
-            >
-              {city2 ? null : (
-                <option value="" disabled>
-                  Select City
-                </option>
-              )}
-
-              {locations.map((loc) => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name}
-                </option>
-              ))}
-            </select>
+            <Select<OptionType, false, GroupBase<OptionType>>
+              options={cityOptions}
+              value={city2 ? { value: city2.id, label: city2.name } : null}
+              onChange={(option: SingleValue<OptionType>) => {
+                if (!option) return dispatch(setCity2(null));
+                const loc =
+                  locations.find((l) => l.id === option.value) || null;
+                dispatch(setCity2(loc));
+              }}
+              isClearable
+              placeholder="-- Select City --"
+              styles={customSelectStyles}
+            />
           </div>
         </div>
 
@@ -165,8 +159,8 @@ export default function CompareDashboard() {
               No city selected
             </h2>
             <p className="text-md text-gray-600 dark:text-gray-400">
-              Please choose a city from the dropdown above to view the compare
-              weather data.
+              Please choose cities from the dropdown above to view the
+              comparison.
             </p>
           </div>
         )}
