@@ -30,9 +30,34 @@ export default function Locations() {
 
   const fetchLocations = async () => {
     setLoading(true);
-    const res = await api.get<Location[]>("/locations");
-    setLocations(res.data);
-    setLoading(false);
+
+    // Check if there's cached data
+    const cachedLocations = localStorage.getItem("locationsData");
+    const cachedTime = localStorage.getItem("locationsDataTime");
+    const currentTime = Date.now();
+
+    const cacheExpired =
+      cachedTime && (currentTime - parseInt(cachedTime)) / 1000 > 60;
+
+    if (cachedLocations && !cacheExpired) {
+      // Use cached data if it's available and not expired
+      setLocations(JSON.parse(cachedLocations));
+      setLoading(false);
+    } else {
+      // Fetch fresh data from API if no cache or cache expired
+      try {
+        const res = await api.get<Location[]>("/locations");
+        setLocations(res.data);
+
+        // Cache the data and current time
+        localStorage.setItem("locationsData", JSON.stringify(res.data));
+        localStorage.setItem("locationsDataTime", currentTime.toString());
+      } catch (err) {
+        console.error("Error fetching locations:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   useEffect(() => {
@@ -49,6 +74,7 @@ export default function Locations() {
         lon: parseFloat(lon),
         timezone,
       });
+      await api.post("/ingest/run");
       setName("");
       setLat("");
       setLon("");

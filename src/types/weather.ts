@@ -23,3 +23,9 @@ export interface DailyWeather {
   rain_total_mm: number;
   wind_max_ms: number;
 }
+
+export type WeatherDataResponse = {
+  latest: LatestWeather;
+  hourly: HourlyWeather[];
+  daily: DailyWeather[];
+};

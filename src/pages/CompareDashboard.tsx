@@ -70,6 +70,36 @@ export default function CompareDashboard() {
       if (!city1 || !city2) return;
       setLoading(true);
 
+      const cachedData1 = localStorage.getItem(
+        `dailyWeather-${city1.id}-${today}`
+      );
+      const cachedData2 = localStorage.getItem(
+        `dailyWeather-${city2.id}-${today}`
+      );
+      const cachedTime1 = localStorage.getItem(
+        `dailyWeatherTime-${city1.id}-${today}`
+      );
+      const cachedTime2 = localStorage.getItem(
+        `dailyWeatherTime-${city2.id}-${today}`
+      );
+
+      const currentTime = Date.now();
+      const cacheExpired =
+        (cachedTime1 && (currentTime - parseInt(cachedTime1)) / 1000 > 60) ||
+        (cachedTime2 && (currentTime - parseInt(cachedTime2)) / 1000 > 60);
+
+      if (cachedData1 && cachedData2 && !cacheExpired) {
+        // Use cached data if not expired
+        const { daily: cachedDaily1 }: { daily: DailyWeather[] } =
+          JSON.parse(cachedData1);
+        const { daily: cachedDaily2 }: { daily: DailyWeather[] } =
+          JSON.parse(cachedData2);
+        setDaily1(cachedDaily1);
+        setDaily2(cachedDaily2);
+        setLoading(false);
+        return;
+      }
+
       try {
         const [d1, d2] = await Promise.all([
           api.get<DailyWeather[]>(
@@ -81,6 +111,28 @@ export default function CompareDashboard() {
         ]);
         setDaily1(d1.data);
         setDaily2(d2.data);
+
+        // Cache the fetched data
+        const weatherData1 = { daily: d1.data };
+        const weatherData2 = { daily: d2.data };
+
+        localStorage.setItem(
+          `dailyWeather-${city1.id}-${today}`,
+          JSON.stringify(weatherData1)
+        );
+        localStorage.setItem(
+          `dailyWeatherTime-${city1.id}-${today}`,
+          currentTime.toString()
+        );
+
+        localStorage.setItem(
+          `dailyWeather-${city2.id}-${today}`,
+          JSON.stringify(weatherData2)
+        );
+        localStorage.setItem(
+          `dailyWeatherTime-${city2.id}-${today}`,
+          currentTime.toString()
+        );
       } catch (err) {
         console.error("Error fetching weather data:", err);
       } finally {

@@ -18,6 +18,7 @@ import type {
   LatestWeather,
   HourlyWeather,
   DailyWeather,
+  WeatherDataResponse,
 } from "../types/weather";
 import type { Location } from "../types/location";
 import type { RootState, AppDispatch } from "../store";
@@ -74,6 +75,30 @@ export default function Dashboard() {
 
       setLoading(true); // ⏳ Start loading
 
+      // Check cache before making API calls
+      const cachedWeather = localStorage.getItem(
+        `weatherData-${selectedLocation.id}`
+      );
+      const cachedTime = localStorage.getItem(
+        `weatherDataTime-${selectedLocation.id}`
+      );
+
+      const currentTime = Date.now();
+      const cacheExpired = cachedTime
+        ? (currentTime - parseInt(cachedTime)) / 1000 > 60
+        : true; // Cache expires in 60 seconds
+
+      if (cachedWeather && !cacheExpired) {
+        // Use cached data if it exists and is not expired
+        const { latest, hourly, daily }: WeatherDataResponse =
+          JSON.parse(cachedWeather);
+        setLatest(latest);
+        setHourly(hourly);
+        setDaily(daily);
+        setLoading(false);
+        return;
+      }
+
       try {
         const latestRes = await api.get<LatestWeather>(
           `/weather/latest?location_id=${selectedLocation.id}`
@@ -112,6 +137,22 @@ export default function Dashboard() {
           )}&to=${formatDate(today)}`
         );
         setDaily(dailyRes.data.reverse());
+
+        // Cache weather data
+        const weatherData: WeatherDataResponse = {
+          latest: latestRes.data,
+          hourly: hourlyRes.data,
+          daily: dailyRes.data.reverse(),
+        };
+
+        localStorage.setItem(
+          `weatherData-${selectedLocation.id}`,
+          JSON.stringify(weatherData)
+        );
+        localStorage.setItem(
+          `weatherDataTime-${selectedLocation.id}`,
+          currentTime.toString()
+        );
       } catch (err) {
         console.error("Error fetching weather", err);
       } finally {
