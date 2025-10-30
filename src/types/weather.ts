@@ -24,8 +24,13 @@ export interface DailyWeather {
   wind_max_ms: number;
 }
 
+export type HourlyPerDay = {
+  date: string;
+  hours: HourlyWeather[];
+};
+
 export type WeatherDataResponse = {
   latest: LatestWeather;
-  hourly: HourlyWeather[];
+  hourlyByDay: HourlyPerDay[];
   daily: DailyWeather[];
 };
