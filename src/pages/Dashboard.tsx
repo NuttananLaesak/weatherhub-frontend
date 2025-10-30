@@ -1,43 +1,49 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import api from "../api/axios";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/layout/Navbar";
+import { NoCitySelected } from "../components/form/NoCitySelected";
+import { HiOutlineMapPin } from "react-icons/hi2";
+import Select, { type SingleValue, type GroupBase } from "react-select";
+import { customSelectStyles } from "../styles/customSelectStyles";
+import { formatDate, formatTime } from "../utils/formatDateTime";
+import { HourlyChart } from "../components/chart/HourlyChart";
+import { DailyChart } from "../components/chart/DailyChart";
+import { setSelectedLocation } from "../store/locationSelected";
+import {
+  getLocations,
+  getLatestWeather,
+  getHourlyWeather,
+  getDailyWeather,
+} from "../api/weatherApi";
 import type {
   LatestWeather,
-  HourlyWeather,
   DailyWeather,
   HourlyPerDay,
   WeatherDataResponse,
 } from "../types/weather";
 import type { Location } from "../types/location";
 import type { RootState, AppDispatch } from "../store";
-import { setSelectedLocation } from "../store/locationSelected";
-import { HiOutlineMapPin } from "react-icons/hi2";
-import Select, { type SingleValue, type GroupBase } from "react-select";
-import { customSelectStyles } from "../styles/customSelectStyles";
-import { formatDate, formatTime } from "../utils/formatDateTime";
-import { HourlyChart } from "../components/HourlyChart";
-import { DailyChart } from "../components/DailyChart";
 import type { OptionType } from "../types/selectOption";
 
 export default function Dashboard() {
-  const [locations, setLocations] = useState<Location[]>([]);
   const dispatch = useDispatch<AppDispatch>();
   const selectedLocation = useSelector(
     (state: RootState) => state.location.selectedLocation
   );
+
+  const [locations, setLocations] = useState<Location[]>([]);
   const [latest, setLatest] = useState<LatestWeather | null>(null);
   const [hourlyByDay, setHourlyByDay] = useState<HourlyPerDay[]>([]);
   const [daily, setDaily] = useState<DailyWeather[]>([]);
-  const [loading, setLoading] = useState(false); // 🔄 loading state
+  const [loading, setLoading] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [displayedDays, setDisplayedDays] = useState(1); //
+  const [displayedDays, setDisplayedDays] = useState(1);
 
   // Load locations
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const res = await api.get<Location[]>("/locations");
+        const res = await getLocations();
         setLocations(res.data);
       } catch (err) {
         console.error("Error fetching locations", err);
@@ -46,12 +52,12 @@ export default function Dashboard() {
     fetchLocations();
   }, [dispatch, selectedLocation]);
 
-  // Load weather when location changes
+  // Load weather data when location changes
   useEffect(() => {
     const fetchWeather = async () => {
       if (!selectedLocation) return;
 
-      setLoading(true); // ⏳ Start loading
+      setLoading(true); // Start loading
 
       // Check cache before making API calls
       const cachedWeather = localStorage.getItem(
@@ -66,10 +72,11 @@ export default function Dashboard() {
       const cachedDisplayedDays = localStorage.getItem(
         `weatherDataDisplayedDays-${selectedLocation.id}`
       );
+      // Cache expires in 60 seconds
       const currentTime = Date.now();
       const cacheExpired = cachedTime
         ? (currentTime - parseInt(cachedTime)) / 1000 > 60
-        : true; // Cache expires in 60 seconds
+        : true;
 
       if (cachedWeather && !cacheExpired) {
         // Use cached data if it exists and is not expired
@@ -84,18 +91,16 @@ export default function Dashboard() {
         setDisplayedDays(
           cachedDisplayedDays ? parseInt(cachedDisplayedDays) : 1
         );
-        setLoading(false);
+        setLoading(false); // Stop loading
         return;
       }
 
       try {
-        const latestRes = await api.get<LatestWeather>(
-          `/weather/latest?location_id=${selectedLocation.id}`
-        );
+        // Load Latest Weather
+        const latestRes = await getLatestWeather(selectedLocation.id);
         setLatest(latestRes.data);
 
         const today = new Date();
-
         const sevenDaysAgo = new Date(today);
         sevenDaysAgo.setDate(today.getDate() - 6);
 
@@ -110,10 +115,11 @@ export default function Dashboard() {
           const end = new Date(day);
           end.setHours(23, 0, 0, 0);
 
-          const hourlyRes = await api.get<HourlyWeather[]>(
-            `/weather/hourly?location_id=${
-              selectedLocation.id
-            }&from=${formatTime(start)}&to=${formatTime(end)}`
+          // Load Hourly Weather
+          const hourlyRes = await getHourlyWeather(
+            selectedLocation.id,
+            formatTime(start),
+            formatTime(end)
           );
 
           dailyHourlyData.push({
@@ -125,10 +131,11 @@ export default function Dashboard() {
         setHourlyByDay(dailyHourlyData);
         setSelectedDayIndex(dailyHourlyData.length - 1);
 
-        const dailyRes = await api.get<DailyWeather[]>(
-          `/weather/daily?location_id=${selectedLocation.id}&from=${formatDate(
-            sevenDaysAgo
-          )}&to=${formatDate(today)}`
+        // Load Diarly Weather
+        const dailyRes = await getDailyWeather(
+          selectedLocation.id,
+          formatDate(sevenDaysAgo),
+          formatDate(today)
         );
         setDaily(dailyRes.data);
 
@@ -244,7 +251,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* แสดงข้อมูลเฉพาะเมื่อเลือกเมืองแล้ว */}
+        {/* Show data only when a city is selected */}
         {selectedLocation ? (
           <>
             {/* Latest Weather */}
@@ -286,19 +293,14 @@ export default function Dashboard() {
             )}
           </>
         ) : (
-          <div className="relative overflow-hidden rounded-lg p-8 bg-white dark:bg-gray-800 shadow-xl text-center">
-            <div className="absolute inset-0 opacity-5 bg-[url('/pattern.svg')] bg-cover bg-center pointer-events-none" />
-            <div className="flex justify-center mb-4">
+          // Show No City Selected Page
+          <NoCitySelected
+            icon={
               <HiOutlineMapPin className="text-6xl text-green-600 dark:text-green-400 animate-bounce" />
-            </div>
-            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2">
-              No city selected
-            </h2>
-            <p className="text-md text-gray-600 dark:text-gray-400">
-              Please choose a city from the dropdown above to view the latest
-              weather data.
-            </p>
-          </div>
+            }
+            title="No City Selected"
+            message="Please choose a city from the dropdown above to view the latest weather data."
+          />
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { Line } from "react-chartjs-2";
-import type { HourlyPerDay, HourlyWeather } from "../types/weather";
-import { PaginationButtons } from "./PaginationButtons";
+import type { HourlyPerDay, HourlyWeather } from "../../types/weather";
+import { PaginationButtons } from "../button/PaginationButtons";
 import {
   Chart as ChartJS,
   CategoryScale,

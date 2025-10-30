@@ -1,5 +1,5 @@
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
-import type { PaginationButtonsProps } from "../types/pagination";
+import type { PaginationButtonsProps } from "../../types/pagination";
 
 export const PaginationButtons: React.FC<PaginationButtonsProps> = ({
   onPrev,

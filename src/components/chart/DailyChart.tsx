@@ -1,6 +1,6 @@
 import { Bar } from "react-chartjs-2";
-import { PaginationButtons } from "./PaginationButtons";
-import type { DailyWeather } from "../types/weather";
+import { PaginationButtons } from "../button/PaginationButtons";
+import type { DailyWeather } from "../../types/weather";
 import {
   Chart as ChartJS,
   CategoryScale,
