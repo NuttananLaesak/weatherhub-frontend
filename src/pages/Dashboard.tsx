@@ -18,11 +18,7 @@ import { customSelectStyles } from "../styles/customSelectStyles";
 import { formatDate, formatTime } from "../utils/formatDateTime";
 import { HourlyChart } from "../components/HourlyChart";
 import { DailyChart } from "../components/DailyChart";
-
-type OptionType = {
-  value: number;
-  label: string;
-};
+import type { OptionType } from "../types/selectOption";
 
 export default function Dashboard() {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -67,6 +63,9 @@ export default function Dashboard() {
       const cachedDayIndex = localStorage.getItem(
         `weatherDataDayIndex-${selectedLocation.id}`
       );
+      const cachedDisplayedDays = localStorage.getItem(
+        `weatherDataDisplayedDays-${selectedLocation.id}`
+      );
       const currentTime = Date.now();
       const cacheExpired = cachedTime
         ? (currentTime - parseInt(cachedTime)) / 1000 > 60
@@ -81,6 +80,9 @@ export default function Dashboard() {
         setDaily(daily);
         setSelectedDayIndex(
           cachedDayIndex ? parseInt(cachedDayIndex) : hourlyByDay.length - 1
+        );
+        setDisplayedDays(
+          cachedDisplayedDays ? parseInt(cachedDisplayedDays) : 1
         );
         setLoading(false);
         return;
@@ -149,6 +151,10 @@ export default function Dashboard() {
           `weatherDataDayIndex-${selectedLocation.id}`,
           (dailyHourlyData.length - 1).toString()
         );
+        localStorage.setItem(
+          `weatherDataDisplayedDays-${selectedLocation.id}`,
+          displayedDays.toString()
+        );
       } catch (err) {
         console.error("Error fetching weather", err);
       } finally {
@@ -157,7 +163,7 @@ export default function Dashboard() {
     };
 
     fetchWeather();
-  }, [selectedLocation]);
+  }, [selectedLocation, displayedDays]);
 
   const handleDayLineChartChange = (newIndex: number) => {
     setSelectedDayIndex(newIndex);
@@ -171,12 +177,21 @@ export default function Dashboard() {
 
   const handleDayBarChartChange = (direction: "back" | "next") => {
     setDisplayedDays((prev) => {
+      let newDisplayedDays = prev;
       if (direction === "next" && prev > 1) {
-        return prev - 1;
+        newDisplayedDays = prev - 1;
       } else if (direction === "back" && prev < 7) {
-        return prev + 1;
+        newDisplayedDays = prev + 1;
       }
-      return prev;
+
+      if (selectedLocation) {
+        localStorage.setItem(
+          `weatherDataDisplayedDays-${selectedLocation.id}`,
+          newDisplayedDays.toString()
+        );
+      }
+
+      return newDisplayedDays;
     });
   };
 
@@ -239,7 +254,7 @@ export default function Dashboard() {
                   <h2 className="text-xl font-semibold">
                     Latest Weather - {selectedLocation.name}
                   </h2>
-                  <h2 className="text-lg font-semibold">
+                  <h2 className="text-md font-semibold">
                     {latest.timestamp.slice(0, 10).replace(/-/g, "/")} -{" "}
                     {latest.timestamp.slice(11, 16)}
                   </h2>
