@@ -9,7 +9,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [dots, setDots] = useState(""); // สำหรับจุด …
+  const [dots, setDots] = useState(""); // ...
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -31,16 +31,16 @@ export default function Login() {
       });
     } finally {
       setLoading(false);
-      setDots(""); // รีเซ็ตจุดหลังโหลดเสร็จ
+      setDots(""); // reset ...
     }
   };
 
-  // Effect สำหรับวนจุด …
+  // ... move
   useEffect(() => {
     if (!loading) return;
     const interval = setInterval(() => {
       setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
-    }, 500); // เพิ่มจุดทุก 0.5 วินาที
+    }, 500);
     return () => clearInterval(interval);
   }, [loading]);
 

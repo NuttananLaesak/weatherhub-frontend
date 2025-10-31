@@ -1,6 +1,6 @@
 import { Bar } from "react-chartjs-2";
 import { PaginationButtons } from "../button/PaginationButtons";
-import type { DailyWeather } from "../../types/weather";
+import type { BarChartProps } from "../../types/chart";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,12 +19,6 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
-type BarChartProps = {
-  daily: DailyWeather[];
-  displayedDays: number;
-  handleDayBarChartChange: (direction: "back" | "next") => void;
-};
 
 export const DailyChart = ({
   daily,

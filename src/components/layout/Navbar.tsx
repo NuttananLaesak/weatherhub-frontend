@@ -14,7 +14,6 @@ export default function Navbar() {
     <nav className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-md transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 lg:py-2 lg:mb-3">
         <div className="flex justify-between items-center h-16">
-          {/* Brand */}
           <div className="flex-shrink-0 text-2xl lg:text-3xl font-bold">
             Weather Hub
           </div>

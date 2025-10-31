@@ -24,7 +24,7 @@ export const customSelectStyles: StylesConfig<OptionType, false> = {
   }),
   valueContainer: (provided) => ({
     ...provided,
-    overflowX: "auto" as const, // บังคับ type ให้ TS ยอมรับ
+    overflowX: "auto" as const,
     whiteSpace: "nowrap",
     paddingRight: "8px",
     scrollbarWidth: "none", // Firefox

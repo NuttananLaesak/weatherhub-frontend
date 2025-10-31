@@ -1,5 +1,4 @@
 import { Line } from "react-chartjs-2";
-import type { HourlyPerDay, HourlyWeather } from "../../types/weather";
 import { PaginationButtons } from "../button/PaginationButtons";
 import {
   Chart as ChartJS,
@@ -11,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import type { LineChartProps } from "../../types/chart";
 
 ChartJS.register(
   CategoryScale,
@@ -21,13 +21,6 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
-type LineChartProps = {
-  todayHourly: HourlyWeather[];
-  selectedDayIndex: number;
-  hourlyByDay: HourlyPerDay[];
-  handleDayLineChartChange: (newIndex: number) => void;
-};
 
 export const HourlyChart = ({
   todayHourly,

@@ -23,7 +23,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // ถ้า request เป็น login ให้ข้าม interceptor
+    // if request is login skip interceptor
     if (originalRequest.url === "/auth/login") {
       return Promise.reject(error);
     }

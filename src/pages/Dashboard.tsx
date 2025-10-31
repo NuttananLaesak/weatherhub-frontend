@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import Navbar from "../components/layout/Navbar";
-import { Spinner } from "../components/loading/Spinner";
+import { MiniSpinner } from "../components/loading/MiniSpinner";
 import { NoCitySelected } from "../components/form/NoCitySelected";
 import { HiOutlineMapPin } from "react-icons/hi2";
 import Select, { type SingleValue, type GroupBase } from "react-select";
@@ -36,7 +36,9 @@ export default function Dashboard() {
   const [latest, setLatest] = useState<LatestWeather | null>(null);
   const [hourlyByDay, setHourlyByDay] = useState<HourlyPerDay[]>([]);
   const [daily, setDaily] = useState<DailyWeather[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingLatest, setLoadingLatest] = useState(false); // new state for loading latest weather
+  const [loadingHourly, setLoadingHourly] = useState(false); // new state for loading hourly data
+  const [loadingDaily, setLoadingDaily] = useState(false); // new state for loading daily data
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [displayedDays, setDisplayedDays] = useState(1);
 
@@ -61,8 +63,6 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchWeather = async () => {
       if (!selectedLocation) return;
-
-      setLoading(true); // Start loading
 
       // Check cache before making API calls
       const cachedWeather = localStorage.getItem(
@@ -96,14 +96,17 @@ export default function Dashboard() {
         setDisplayedDays(
           cachedDisplayedDays ? parseInt(cachedDisplayedDays) : 1
         );
-        setLoading(false); // Stop loading
         return;
       }
 
       try {
         // Load Latest Weather
+        setLoadingLatest(true);
+        setLoadingHourly(true);
+        setLoadingDaily(true);
         const latestRes = await getLatestWeather(selectedLocation.id);
         setLatest(latestRes.data);
+        setLoadingLatest(false);
 
         const today = new Date();
         const sevenDaysAgo = new Date(today);
@@ -132,6 +135,7 @@ export default function Dashboard() {
             hours: hourlyRes.data,
           });
         }
+        setLoadingHourly(false);
 
         setHourlyByDay(dailyHourlyData);
         setSelectedDayIndex(dailyHourlyData.length - 1);
@@ -143,6 +147,7 @@ export default function Dashboard() {
           formatDate(today)
         );
         setDaily(dailyRes.data);
+        setLoadingDaily(false);
 
         // Cache weather data
         const weatherData: WeatherDataResponse = {
@@ -169,8 +174,6 @@ export default function Dashboard() {
         );
       } catch (err) {
         console.error("Error fetching weather", err);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -221,9 +224,6 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
       <Navbar />
 
-      {/* Loading Spinner */}
-      {loading && <Spinner />}
-
       <div className="p-6 max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
@@ -258,41 +258,59 @@ export default function Dashboard() {
         {selectedLocation ? (
           <>
             {/* Latest Weather */}
-            {latest && (
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
-                <div className="lg:flex justify-between mb-3">
-                  <h2 className="text-xl font-semibold">
-                    Latest Weather - {selectedLocation.name}
-                  </h2>
-                  <h2 className="text-md font-semibold">
-                    {latest.timestamp.slice(0, 10).replace(/-/g, "/")} -{" "}
-                    {latest.timestamp.slice(11, 16)}
-                  </h2>
-                </div>
-                <p>🌡️ Temp: {latest.temp_c} °C</p>
-                <p>💧 Humidity: {latest.humidity} %</p>
-                <p>💨 Wind: {latest.wind_ms} m/s</p>
-                <p>🌧️ Rain: {latest.rain_mm} mm</p>
-              </div>
-            )}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+              {loadingLatest ? (
+                <MiniSpinner />
+              ) : (
+                latest && (
+                  <>
+                    <div className="lg:flex justify-between mb-3">
+                      <h2 className="text-xl font-semibold">
+                        Latest Weather - {selectedLocation.name}
+                      </h2>
+                      <h2 className="text-md font-semibold">
+                        {latest.timestamp.slice(0, 10).replace(/-/g, "/")} -{" "}
+                        {/* {latest.timestamp.slice(11, 16)} */}
+                      </h2>
+                    </div>
+                    <p>🌡️ Temp: {latest.temp_c} °C</p>
+                    <p>💧 Humidity: {latest.humidity} %</p>
+                    <p>💨 Wind: {latest.wind_ms} m/s</p>
+                    <p>🌧️ Rain: {latest.rain_mm} mm</p>
+                  </>
+                )
+              )}
+            </div>
 
             {/* Hourly Chart */}
-            {todayHourly.length > 0 && (
-              <HourlyChart
-                todayHourly={todayHourly}
-                selectedDayIndex={selectedDayIndex}
-                hourlyByDay={hourlyByDay}
-                handleDayLineChartChange={handleDayLineChartChange}
-              />
+            {loadingHourly ? (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+                <MiniSpinner />
+              </div>
+            ) : (
+              todayHourly.length > 0 && (
+                <HourlyChart
+                  todayHourly={todayHourly}
+                  selectedDayIndex={selectedDayIndex}
+                  hourlyByDay={hourlyByDay}
+                  handleDayLineChartChange={handleDayLineChartChange}
+                />
+              )
             )}
 
             {/* Daily Chart */}
-            {daily.length > 0 && (
-              <DailyChart
-                daily={daily}
-                displayedDays={displayedDays}
-                handleDayBarChartChange={handleDayBarChartChange}
-              />
+            {loadingDaily ? (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+                <MiniSpinner />
+              </div>
+            ) : (
+              daily.length > 0 && (
+                <DailyChart
+                  daily={daily}
+                  displayedDays={displayedDays}
+                  handleDayBarChartChange={handleDayBarChartChange}
+                />
+              )
             )}
           </>
         ) : (

@@ -22,7 +22,7 @@ function App() {
           <Route path="/compare" element={<CompareDashboard />} />
         </Route>
 
-        {/* Redirect หน้าอื่นที่ไม่รู้จัก */}
+        {/* Redirect when unknow page */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>

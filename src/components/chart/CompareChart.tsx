@@ -1,5 +1,5 @@
 import { Bar } from "react-chartjs-2";
-import type { CompareChartProps } from "../../types/compareChart";
+import type { CompareChartProps } from "../../types/chart";
 
 export const CompareChart = ({
   city1,
