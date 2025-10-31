@@ -6,6 +6,7 @@ import { NoCitySelected } from "../components/form/NoCitySelected";
 import { HiOutlineMapPin } from "react-icons/hi2";
 import Select, { type SingleValue, type GroupBase } from "react-select";
 import { customSelectStyles } from "../styles/customSelectStyles";
+import { weatherCodeMap } from "../utils/weatherCodeMap";
 import { formatDate, formatTime } from "../utils/formatDateTime";
 import { HourlyChart } from "../components/chart/HourlyChart";
 import { DailyChart } from "../components/chart/DailyChart";
@@ -25,6 +26,7 @@ import type {
 import type { Location } from "../types/location";
 import type { RootState, AppDispatch } from "../store";
 import type { OptionType } from "../types/selectOption";
+import { FaCloudRain, FaWind } from "react-icons/fa";
 
 export default function Dashboard() {
   const dispatch = useDispatch<AppDispatch>();
@@ -270,13 +272,18 @@ export default function Dashboard() {
                       </h2>
                       <h2 className="text-md font-semibold">
                         {latest.timestamp.slice(0, 10).replace(/-/g, "/")} -{" "}
-                        {/* {latest.timestamp.slice(11, 16)} */}
+                        {latest.timestamp.slice(11, 16)}
                       </h2>
                     </div>
                     <p>🌡️ Temp: {latest.temp_c} °C</p>
-                    <p>💧 Humidity: {latest.humidity} %</p>
-                    <p>💨 Wind: {latest.wind_ms} m/s</p>
-                    <p>🌧️ Rain: {latest.rain_mm} mm</p>
+                    <p>💨 Wind Speed: {latest.wind_ms} m/s</p>
+                    <p className="flex items-center gap-2">
+                      <FaWind /> Wind Direction : {latest.wind_direction} °
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <FaCloudRain /> Condition :{" "}
+                      {weatherCodeMap[latest.weather_code]}
+                    </p>
                   </>
                 )
               )}

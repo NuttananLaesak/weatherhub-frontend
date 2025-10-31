@@ -1,8 +1,7 @@
 export interface LatestWeather {
   temp_c: number;
-  humidity: number;
   wind_ms: number;
-  rain_mm: number;
+  wind_direction: number;
   weather_code: number;
   timestamp: string;
 }
