@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import Navbar from "../components/layout/Navbar";
+import { Spinner } from "../components/loading/Spinner";
 import { NoCitySelected } from "../components/form/NoCitySelected";
 import { HiOutlineMapPin } from "react-icons/hi2";
 import Select, { type SingleValue, type GroupBase } from "react-select";
@@ -44,7 +45,11 @@ export default function Dashboard() {
     const fetchLocations = async () => {
       try {
         const res = await getLocations();
-        setLocations(res.data);
+        setLocations(
+          res.data
+            .filter((location: Location) => location.active === 1)
+            .reverse()
+        );
       } catch (err) {
         console.error("Error fetching locations", err);
       }
@@ -172,6 +177,7 @@ export default function Dashboard() {
     fetchWeather();
   }, [selectedLocation, displayedDays]);
 
+  // Change selected day for Hourly Chart
   const handleDayLineChartChange = (newIndex: number) => {
     setSelectedDayIndex(newIndex);
     if (selectedLocation) {
@@ -182,6 +188,7 @@ export default function Dashboard() {
     }
   };
 
+  // Change displayed days for Daily Chart
   const handleDayBarChartChange = (direction: "back" | "next") => {
     setDisplayedDays((prev) => {
       let newDisplayedDays = prev;
@@ -215,11 +222,7 @@ export default function Dashboard() {
       <Navbar />
 
       {/* Loading Spinner */}
-      {loading && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
+      {loading && <Spinner />}
 
       <div className="p-6 max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Dashboard</h1>

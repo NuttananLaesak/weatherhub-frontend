@@ -1,10 +1,4 @@
-import type { JSX } from "react";
-
-interface NoCitySelectedProps {
-  icon: JSX.Element;
-  title: string;
-  message: string;
-}
+import type { NoCitySelectedProps } from "../../types/noCity";
 
 export const NoCitySelected: React.FC<NoCitySelectedProps> = ({
   icon,

@@ -1,22 +1,18 @@
 import { useEffect, useState } from "react";
-import api from "../api/axios";
 import type { Location } from "../types/location";
 import Navbar from "../components/layout/Navbar";
+import { Spinner } from "../components/loading/Spinner";
+import { InputLocationForm } from "../components/form/InputLocationForm";
+import { LocationsTable } from "../components/form/LocationsTable";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { BsGlobeAmericas } from "react-icons/bs";
-
-const customIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+import { markerIcon } from "../styles/markerMapStyle";
+import {
+  getLocations,
+  addLocation,
+  toggleLocationActive,
+  getTimezone,
+} from "../api/locationApi";
 
 export default function Locations() {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -28,10 +24,10 @@ export default function Locations() {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Fetch locations and cache
   const fetchLocations = async () => {
     setLoading(true);
 
-    // Check if there's cached data
     const cachedLocations = localStorage.getItem("locationsData");
     const cachedTime = localStorage.getItem("locationsDataTime");
     const currentTime = Date.now();
@@ -40,16 +36,12 @@ export default function Locations() {
       cachedTime && (currentTime - parseInt(cachedTime)) / 1000 > 60;
 
     if (cachedLocations && !cacheExpired) {
-      // Use cached data if it's available and not expired
       setLocations(JSON.parse(cachedLocations));
       setLoading(false);
     } else {
-      // Fetch fresh data from API if no cache or cache expired
       try {
-        const res = await api.get<Location[]>("/locations");
-        setLocations(res.data);
-
-        // Cache the data and current time
+        const res = await getLocations();
+        setLocations(res.data.reverse());
         localStorage.setItem("locationsData", JSON.stringify(res.data));
         localStorage.setItem("locationsDataTime", currentTime.toString());
       } catch (err) {
@@ -64,22 +56,14 @@ export default function Locations() {
     fetchLocations();
   }, []);
 
+  // Handle location addition
   const handleAdd = async () => {
     setLoading(true);
     setSaved(true);
     try {
-      await api.post("/locations", {
-        name,
-        lat: parseFloat(lat),
-        lon: parseFloat(lon),
-        timezone,
-      });
-      await api.post("/ingest/run");
-      setName("");
-      setLat("");
-      setLon("");
-      setTimezone("");
-      setMarker(null);
+      await addLocation(name, parseFloat(lat), parseFloat(lon), timezone);
+      resetForm();
+      removeCache();
       fetchLocations();
     } catch (err) {
       console.error("Error saving location:", err);
@@ -89,6 +73,38 @@ export default function Locations() {
     }
   };
 
+  // Handle active status toggle
+  const handleToggleActive = async (id: number, currentStatus: number) => {
+    setLoading(true);
+    try {
+      await toggleLocationActive(id, currentStatus);
+      removeCache();
+      fetchLocations();
+    } catch (err) {
+      console.error("Error toggling active status:", err);
+    } finally {
+      setTimeout(() => {
+        setLoading(false);
+      }, 1000);
+    }
+  };
+
+  // Remove cache data
+  function removeCache() {
+    localStorage.removeItem("locationsData");
+    localStorage.removeItem("locationsDataTime");
+  }
+
+  // Reset form fields
+  function resetForm() {
+    setName("");
+    setLat("");
+    setLon("");
+    setTimezone("");
+    setMarker(null);
+  }
+
+  // Handle map click event timezone
   function LocationSelector() {
     useMapEvents({
       async click(e) {
@@ -100,68 +116,41 @@ export default function Locations() {
         setLon(lonVal.toFixed(4));
 
         try {
-          const res = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${latVal}&longitude=${lonVal}&current=temperature_2m&timezone=auto`
-          );
-          const data = await res.json();
-          setTimezone(data.timezone || "");
+          const timezone = await getTimezone(latVal, lonVal);
+          setTimezone(timezone);
         } catch (err) {
           console.error("Error fetching timezone:", err);
           setTimezone("");
         }
       },
     });
-    return marker ? <Marker position={marker} icon={customIcon} /> : null;
+    return marker ? <Marker position={marker} icon={markerIcon} /> : null;
   }
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 min-h-screen text-gray-900 dark:text-white transition-colors duration-300">
       <Navbar />
 
-      {/* Overlay Loading Spinner */}
-      {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[9999]">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
+      {/* Loading Spinner */}
+      {loading && <Spinner />}
 
       <div className="p-6 max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold mb-4">Locations</h1>
 
         {/* Input Form */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <input
-            className="border dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-full sm:w-auto"
-            placeholder="City Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            className="border dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-24"
-            placeholder="Lat"
-            value={lat}
-            onChange={(e) => setLat(e.target.value)}
-          />
-          <input
-            className="border dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-24"
-            placeholder="Lon"
-            value={lon}
-            onChange={(e) => setLon(e.target.value)}
-          />
-          <input
-            className="border dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white p-2 rounded w-36"
-            placeholder="Timezone"
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-          />
-          <button
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
-            onClick={handleAdd}
-            disabled={!name || !lat || !lon || !timezone || loading}
-          >
-            {saved ? "Saving..." : "Add"}
-          </button>
-        </div>
+        <InputLocationForm
+          name={name}
+          lat={lat}
+          lon={lon}
+          timezone={timezone}
+          setName={setName}
+          setLat={setLat}
+          setLon={setLon}
+          setTimezone={setTimezone}
+          handleAdd={handleAdd}
+          saved={saved}
+          loading={loading}
+        />
 
         {/* Map */}
         <div className="h-[400px] mb-6 border rounded overflow-hidden dark:border-gray-700">
@@ -178,52 +167,11 @@ export default function Locations() {
           </MapContainer>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full border border-gray-300 dark:border-gray-700">
-            <thead className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white">
-              <tr>
-                <th className="border p-2">Name</th>
-                <th className="border p-2">Lat</th>
-                <th className="border p-2">Lon</th>
-                <th className="border p-2">Timezone</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 text-black dark:text-white">
-              {locations.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-8 text-center relative">
-                    <div className="relative overflow-hidden rounded-lg p-10 bg-white dark:bg-gray-800 shadow-lg text-center transition-all duration-300 hover:shadow-2xl">
-                      <div className="absolute inset-0 opacity-5 bg-[url('/pattern.svg')] bg-cover bg-center pointer-events-none" />
-                      <div className="flex justify-center mb-4">
-                        <BsGlobeAmericas className="text-6xl text-green-600 dark:text-green-400 animate-bounce" />
-                      </div>
-                      <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2">
-                        No locations found
-                      </h2>
-                      <p className="text-md text-gray-600 dark:text-gray-400">
-                        Add a new location above or click on the map to select
-                        one.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                locations.map((loc) => (
-                  <tr
-                    key={loc.id}
-                    className="hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <td className="border p-2">{loc.name}</td>
-                    <td className="border p-2">{loc.lat}</td>
-                    <td className="border p-2">{loc.lon}</td>
-                    <td className="border p-2">{loc.timezone}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Locations Table */}
+        <LocationsTable
+          locations={locations}
+          handleToggleActive={handleToggleActive}
+        />
       </div>
     </div>
   );
